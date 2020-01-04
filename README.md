@@ -9,3 +9,5 @@ meant to work as part of the hapi ecosystem which does not rely on external depe
 
 [![Build Status](https://secure.travis-ci.org/hapijs/somever.svg?branch=master)](https://travis-ci.org/hapijs/somever)
 
+## Useful resources
+- [Changelog](https://hapi.dev/family/somever/changelog/)
