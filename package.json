@@ -3,6 +3,9 @@
   "description": "Semantic versioning rules parser",
   "version": "1.1.0",
   "repository": "git://github.com/hapijs/somever",
+  "engines": {
+    "node": ">=6.0.0"
+  },
   "main": "lib/index.js",
   "keywords": [
     "semantic",
