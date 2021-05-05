@@ -232,6 +232,12 @@ describe('Version', () => {
         expect(version.build).to.equal([]);
     });
 
+    it('converts to string', () => {
+
+        const version = Somever.version({ prerelease: [1], build: ['abc'] });
+        expect(`${version}`).to.equal('x.x.x-1+abc');
+    });
+
     describe('_parse()', () => {
 
         it('throws on invalid version string', () => {
@@ -316,6 +322,10 @@ describe('compare()', () => {
         expect(Somever.compare('1.1.2-bis.z.1.3', '1.1.2-bis.z.1.4')).to.equal(-1);
         expect(Somever.compare('1.1.2-bis.1.3', '1.1.2-bis.1.z')).to.equal(-1);
         expect(Somever.compare('1.1.2-bis.1.z', '1.1.2-bis.1.3')).to.equal(1);
+        expect(Somever.compare('1.1.2-bis.z.1.1', '1.1.2-bis.z.1.10')).to.equal(-1);
+        expect(Somever.compare('1.1.2-bis.z.1.10', '1.1.2-bis.z.1.1')).to.equal(1);
+        expect(Somever.compare('1.1.2-bis.z.1.3', '1.1.2-bis.z.1.10')).to.equal(-1);
+        expect(Somever.compare('1.1.2-bis.z.1.10', '1.1.2-bis.z.1.3')).to.equal(1);
     });
 });
 
