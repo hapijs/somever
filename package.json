@@ -1,7 +1,7 @@
 {
   "name": "@hapi/somever",
   "description": "Semantic versioning rules parser",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "repository": "git://github.com/hapijs/somever",
   "main": "lib/index.js",
   "files": [
