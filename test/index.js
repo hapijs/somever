@@ -120,16 +120,43 @@ describe('match()', () => {
             ['x - 1.x', '0.9.7'],
             ['1.0.0 - x', '1.9.7'],
             ['1.x - x', '1.9.7'],
-            ['<=7.x', '7.9.9']
+            ['<=7.x', '7.9.9'],
+            ['2.x', '2.0.0-pre.0', { includePrerelease: true }],
+            ['2.x', '2.1.0-pre.0', { includePrerelease: true }],
+            ['1.1.x', '1.1.0-a', { includePrerelease: true }],
+            ['1.1.x', '1.1.1-a', { includePrerelease: true }],
+            ['*', '1.0.0-rc1', { includePrerelease: true }],
+            ['^1.0.0-0', '1.0.1-rc1', { includePrerelease: true }],
+            ['^1.0.0-rc2', '1.0.1-rc1', { includePrerelease: true }],
+            ['^1.0.0', '1.0.1-rc1', { includePrerelease: true }],
+            ['^1.0.0', '1.1.0-rc1', { includePrerelease: true }],
+            ['1 - 2', '2.0.0-pre', { includePrerelease: true }],
+            ['1 - 2', '1.0.0-pre', { includePrerelease: true }],
+            ['1.0 - 2', '1.0.0-pre', { includePrerelease: true }],
+            ['=0.7.x', '0.7.0-asdf', { includePrerelease: true }],
+            ['>=0.7.x', '0.7.0-asdf', { includePrerelease: true }],
+            ['<=0.7.x', '0.7.0-asdf', { includePrerelease: true }],
+            ['>=1.0.0 <=1.1.0', '1.1.0-pre', { includePrerelease: true }]
         ];
 
         for (const test of tests) {
-            const match = Somever.match(test[1], test[0]);
+            const match = Somever.match(test[1], test[0], test[2]);
             if (!match) {
                 console.log(test);
             }
 
             expect(match).to.be.true();
+
+            // All tests that match without includePrerelease should also match with includePrerelease
+
+            if (!test[2]?.includePrerelease) {
+                const matchPre = Somever.match(test[1], test[0], { ...test[2], includePrerelease: true });
+                if (!matchPre) {
+                    console.log('with includePrerelease', test);
+                }
+
+                expect(matchPre).to.be.true();
+            }
         }
     });
 
@@ -202,16 +229,38 @@ describe('match()', () => {
             ['^1.2', '1.1.9'],
             ['^0.1.0', '0.2.0'],
             ['*', 'v1.2.3-foo'],
-            ['%1.2.3', '1.2.3']
+            ['%1.2.3', '1.2.3'],
+            ['2.2.0', '2.2.0-pre.0', { includePrerelease: true }],
+            ['2.x', '3.0.0-pre.0', { includePrerelease: true }],
+            ['^1.0.0', '1.0.0-rc1', { includePrerelease: true }],
+            ['^1.0.0', '2.0.0-rc1', { includePrerelease: true }],
+            ['^1.2.3-rc2', '2.0.0', { includePrerelease: true }],
+            ['1 - 2', '3.0.0-pre', { includePrerelease: true }],
+            ['1.1.x', '1.2.0-a', { includePrerelease: true }],
+            ['1.1.x', '1.0.0-a', { includePrerelease: true }],
+            ['1.x', '0.0.0-a', { includePrerelease: true }],
+            ['1.x', '2.0.0-a', { includePrerelease: true }],
+            ['>=1.0.0 <1.1.0', '1.1.0', { includePrerelease: true }]
         ];
 
         for (const test of tests) {
-            const match = Somever.match(test[1], test[0]);
+            const match = Somever.match(test[1], test[0], test[2]);
             if (match) {
                 console.log(test);
             }
 
             expect(match).to.be.false();
+
+            // All tests that don't match with includePrerelease should also not match without includePrerelease
+
+            if (test[2]?.includePrerelease) {
+                const matchPre = Somever.match(test[1], test[0], { ...test[2], includePrerelease: false });
+                if (matchPre) {
+                    console.log('without includePrerelease', test);
+                }
+
+                expect(matchPre).to.be.false();
+            }
         }
     });
 });
@@ -311,6 +360,10 @@ describe('compare()', () => {
         expect(Somever.compare('x.1.1', '2.1.1')).to.equal(0);
         expect(Somever.compare('1.1.x', '1.1.1')).to.equal(0);
         expect(Somever.compare('1.x.1', '1.3.1')).to.equal(0);
+        expect(Somever.compare('1.1.x', '1.1.2-pre', { includePrerelease: true })).to.equal(0);
+        expect(Somever.compare('1.1.x', '1.1.2-pre', { includePrerelease: false })).to.equal(1);
+        expect(Somever.compare('1.1.0', '1.1.x-pre', { includePrerelease: true })).to.equal(1);
+        expect(Somever.compare('1.1.0', '1.1.x-pre', { includePrerelease: false })).to.equal(1);
     });
 
     it('compares prereleases', () => {
@@ -386,23 +439,23 @@ describe('Range', () => {
             ['*', '*'],
             ['2', '2.x.x'],
             ['2.3', '2.3.x'],
-            ['~2.4', '>=2.4.x <2.5.0'],
-            ['~>3.2.1', '>=3.2.1 <3.3.0'],
-            ['~1', '>=1.x.x <2.0.0'],
-            ['~>1', '>=1.x.x <2.0.0'],
-            ['~> 1', '>=1.x.x <2.0.0'],
-            ['~1.0', '>=1.0.x <1.1.0'],
-            ['~ 1.0', '>=1.0.x <1.1.0'],
-            ['^0', '>=0.x.x <1.0.0'],
-            ['^ 1', '>=1.x.x <2.0.0'],
-            ['^0.1', '>=0.1.x <0.2.0'],
-            ['^1.0', '>=1.0.x <2.0.0'],
-            ['^1.2', '>=1.2.x <2.0.0'],
-            ['^0.0.1', '>=0.0.1 <0.0.2'],
-            ['^0.0.1-beta', '>=0.0.1-beta <0.0.2'],
-            ['^0.1.2', '>=0.1.2 <0.2.0'],
-            ['^1.2.3', '>=1.2.3 <2.0.0'],
-            ['^1.2.3-beta.4', '>=1.2.3-beta.4 <2.0.0'],
+            ['~2.4', '>=2.4.x <2.5.0-0'],
+            ['~>3.2.1', '>=3.2.1 <3.3.0-0'],
+            ['~1', '>=1.x.x <2.0.0-0'],
+            ['~>1', '>=1.x.x <2.0.0-0'],
+            ['~> 1', '>=1.x.x <2.0.0-0'],
+            ['~1.0', '>=1.0.x <1.1.0-0'],
+            ['~ 1.0', '>=1.0.x <1.1.0-0'],
+            ['^0', '>=0.x.x <1.0.0-0'],
+            ['^ 1', '>=1.x.x <2.0.0-0'],
+            ['^0.1', '>=0.1.x <0.2.0-0'],
+            ['^1.0', '>=1.0.x <2.0.0-0'],
+            ['^1.2', '>=1.2.x <2.0.0-0'],
+            ['^0.0.1', '>=0.0.1 <0.0.2-0'],
+            ['^0.0.1-beta', '>=0.0.1-beta <0.0.2-0'],
+            ['^0.1.2', '>=0.1.2 <0.2.0-0'],
+            ['^1.2.3', '>=1.2.3 <2.0.0-0'],
+            ['^1.2.3-beta.4', '>=1.2.3-beta.4 <2.0.0-0'],
             ['<1', '<1.x.x'],
             ['< 1', '<1.x.x'],
             ['>=1', '>=1.x.x'],
@@ -410,8 +463,8 @@ describe('Range', () => {
             ['<1.2', '<1.2.x'],
             ['< 1.2', '<1.2.x'],
             ['>01.02.03', '>1.2.3'],
-            ['~1.2.3beta', '>=1.2.3-beta <1.3.0'],
-            ['^ 1.2 ^ 1', '>=1.2.x <2.0.0 >=1.x.x <2.0.0']
+            ['~1.2.3beta', '>=1.2.3-beta <1.3.0-0'],
+            ['^ 1.2 ^ 1', '>=1.2.x <2.0.0-0 >=1.x.x <2.0.0-0']
         ];
 
         for (const test of tests) {
